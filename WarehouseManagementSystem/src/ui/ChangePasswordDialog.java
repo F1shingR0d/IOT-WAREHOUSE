@@ -1,5 +1,6 @@
 package ui;
 
+import dao.CustomerAccountDAO;
 import dao.UserDAO;
 import java.awt.BorderLayout;
 import java.awt.FlowLayout;
@@ -12,6 +13,7 @@ import javax.swing.JPanel;
 import javax.swing.JPasswordField;
 import javax.swing.KeyStroke;
 import javax.swing.border.EmptyBorder;
+import model.CustomerAccount;
 import model.User;
 import ui.components.FlatButton;
 import ui.components.ModuleIcon;
@@ -22,13 +24,15 @@ import util.Session;
 import util.Validator;
 
 /**
- * Lets the logged-in user change his or her own password.
+ * Lets the logged-in user (staff or Customer Portal customer) change his or
+ * her own password.
  */
 public class ChangePasswordDialog extends JDialog {
 
     private static final long serialVersionUID = 1L;
 
     private final UserDAO userDAO = new UserDAO();
+    private final CustomerAccountDAO customerAccountDAO = new CustomerAccountDAO();
     private final JPasswordField txtCurrent = new JPasswordField(20);
     private final JPasswordField txtNew = new JPasswordField(20);
     private final JPasswordField txtConfirm = new JPasswordField(20);
@@ -57,8 +61,9 @@ public class ChangePasswordDialog extends JDialog {
         JPanel root = new JPanel(new BorderLayout(0, 16));
         root.setBackground(UITheme.CARD);
         root.setBorder(new EmptyBorder(20, 24, 18, 24));
-        root.add(UITheme.headingLabel("Change password for " + Session.getCurrentUser().getUsername()),
-                BorderLayout.NORTH);
+        String username = Session.isCustomer() ? Session.getCurrentCustomer().getUsername()
+                : Session.getCurrentUser().getUsername();
+        root.add(UITheme.headingLabel("Change password for " + username), BorderLayout.NORTH);
         root.add(form, BorderLayout.CENTER);
         root.add(buttons, BorderLayout.SOUTH);
         setContentPane(root);
@@ -93,6 +98,17 @@ public class ChangePasswordDialog extends JDialog {
             }
             if (Arrays.equals(current, newPassword)) {
                 Dialogs.invalid(this, "The new password must be different from the current one.", txtNew);
+                return;
+            }
+            if (Session.isCustomer()) {   // Customer Portal account (CUSTOMER_ACCOUNTS)
+                CustomerAccount account = Session.getCurrentCustomer();
+                if (customerAccountDAO.authenticate(account.getUsername(), current) == null) {
+                    Dialogs.invalid(this, "The current password is not correct.", txtCurrent);
+                    return;
+                }
+                customerAccountDAO.changePassword(account.getAccountId(), newPassword);
+                Dialogs.success(this, "Your password was changed.");
+                dispose();
                 return;
             }
             User user = Session.getCurrentUser();

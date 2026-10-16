@@ -1,9 +1,11 @@
 package database;
 
+import dao.CustomerAccountDAO;
 import dao.CustomerDAO;
 import dao.ProductDAO;
 import dao.ReceivingDAO;
 import dao.ReleaseDAO;
+import dao.StockRequestDAO;
 import dao.SupplierDAO;
 import dao.TransferDAO;
 import dao.UserDAO;
@@ -20,6 +22,9 @@ import model.Receiving;
 import model.ReceivingItem;
 import model.Release;
 import model.ReleaseItem;
+import model.Status;
+import model.StockRequest;
+import model.StockRequestItem;
 import model.StockTransfer;
 import model.Supplier;
 import model.TransferItem;
@@ -134,6 +139,60 @@ final class SampleDataSeeder {
                 "ELE-1005", 30);
         release(0, "WH-002", "Bayview Hotel & Suites", "staff", "Weekly supplies",
                 "FNB-4001", 60, "CLN-5003", 90);
+    }
+
+    /**
+     * Demo data of the Customer Portal: two active customer accounts, one
+     * registration waiting for approval and a few stock requests in different
+     * states. No request is released here, so the stock is not changed.
+     */
+    static void insertCustomerPortalData() throws SQLException, BusinessRuleException {
+        new SampleDataSeeder().runCustomerPortal();
+    }
+
+    private void runCustomerPortal() throws SQLException, BusinessRuleException {
+        loadLookups();
+        CustomerAccountDAO accountDAO = new CustomerAccountDAO();
+        Customer northpoint = customers.get("Northpoint Retail Mart");
+        Customer golden = customers.get("Golden Harvest Grocery");
+        if (northpoint == null || golden == null) {
+            return;   // the sample customers were renamed or removed
+        }
+        accountDAO.addAccount(northpoint.getCustomerId(), "northpoint", "customer123".toCharArray(), Status.ACTIVE);
+        accountDAO.addAccount(golden.getCustomerId(), "goldenharvest", "customer123".toCharArray(), Status.ACTIVE);
+
+        Customer lakeside = new Customer(0, "Lakeside Cafe & Bakery", "Liza Mercado", "0932-555-0206");
+        lakeside.setEmail("orders@lakeside.example.com");
+        lakeside.setAddress("Lakeshore Drive, Taguig City");
+        accountDAO.register(lakeside, "lakeside", "customer123".toCharArray());
+
+        int reviewer = users.get("manager");
+        StockRequestDAO requestDAO = new StockRequestDAO();
+        request(northpoint, 0, 5, "WH-001", "For the new branch opening", "ELE-1002", 40, "OFF-2001", 120);
+        int approved = request(golden, 2, 4, "WH-002", "Weekly grocery restock", "FNB-4001", 60, "FNB-4002", 40);
+        requestDAO.approveRequest(approved, reviewer, "Scheduled for delivery this week.");
+        int rejected = request(northpoint, 6, 0, "WH-003", null, "PKG-6003", 200);
+        requestDAO.rejectRequest(rejected, reviewer,
+                "Not enough stock of bubble wrap rolls. Please request again next month.");
+        int cancelled = request(golden, 9, 0, "WH-002", "Cleaning supplies", "CLN-5001", 30);
+        requestDAO.cancelRequest(cancelled, golden.getCustomerId());
+    }
+
+    /** skuAndQuantity: "SKU", quantity, ...; neededInDays 0 = no "needed by" date. */
+    private int request(Customer customer, int daysAgo, int neededInDays, String warehouse, String remarks,
+                        Object... skuAndQuantity) throws SQLException, BusinessRuleException {
+        StockRequest request = new StockRequest(customer.getCustomerId(), warehouses.get(warehouse).getWarehouseId());
+        request.setRequestDate(today.minusDays(daysAgo));
+        if (neededInDays > 0) {
+            request.setNeededBy(today.plusDays(neededInDays));
+        }
+        request.setRemarks(remarks);
+        for (int i = 0; i < skuAndQuantity.length; i += 2) {
+            Product p = products.get((String) skuAndQuantity[i]);
+            request.addItem(new StockRequestItem(p.getProductId(), p.getSku(), p.getProductName(), p.getUnit(),
+                    (Integer) skuAndQuantity[i + 1]));
+        }
+        return new StockRequestDAO().submitRequest(request);
     }
 
     private void loadLookups() throws SQLException {

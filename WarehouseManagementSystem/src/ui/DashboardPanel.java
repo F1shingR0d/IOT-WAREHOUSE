@@ -52,6 +52,9 @@ public class DashboardPanel extends JPanel implements Refreshable {
             new Class<?>[]{String.class, String.class, Integer.class, Integer.class});
     private final JTabbedPane activityTabs = new JTabbedPane();
     private final javax.swing.JLabel lblWelcome = UITheme.mutedLabel(" ");
+    /** Shown only when customer requests or registrations are waiting (admins and managers). */
+    private final RoundedPanel requestBanner = new RoundedPanel(new BorderLayout(14, 0));
+    private final javax.swing.JLabel lblBanner = new javax.swing.JLabel(" ");
 
     public DashboardPanel(Consumer<String> navigator) {
         super(new BorderLayout(0, 16));
@@ -104,9 +107,26 @@ public class DashboardPanel extends JPanel implements Refreshable {
         lower.add(chartCard, BorderLayout.WEST);
         lower.add(activityCard, BorderLayout.CENTER);
 
+        // banner above the cards: customer requests waiting for review
+        lblBanner.setFont(UITheme.FONT_BOLD);
+        lblBanner.setForeground(UITheme.TEXT);
+        lblBanner.setIcon(new ModuleIcon(ModuleIcon.Type.REQUESTS, 26, UITheme.WARNING));
+        lblBanner.setIconTextGap(12);
+        FlatButton btnOpenRequests = new FlatButton("Open Customer Requests", UITheme.WARNING, ModuleIcon.Type.REQUESTS);
+        btnOpenRequests.addActionListener(e -> navigator.accept(DashboardFrame.REQUESTS));
+        requestBanner.setBorder(new EmptyBorder(6, 16, 6, 8));   // slimmer than a normal card
+        requestBanner.add(lblBanner, BorderLayout.CENTER);
+        requestBanner.add(btnOpenRequests, BorderLayout.EAST);
+        requestBanner.setVisible(false);
+
+        JPanel top = new JPanel(new BorderLayout(0, 16));
+        top.setOpaque(false);
+        top.add(requestBanner, BorderLayout.NORTH);
+        top.add(cards, BorderLayout.CENTER);
+
         JPanel body = new JPanel(new BorderLayout(0, 16));
         body.setOpaque(false);
-        body.add(cards, BorderLayout.NORTH);
+        body.add(top, BorderLayout.NORTH);
         body.add(lower, BorderLayout.CENTER);
         add(body, BorderLayout.CENTER);
     }
@@ -134,8 +154,27 @@ public class DashboardPanel extends JPanel implements Refreshable {
             List<Object[]> lowStock = dashboardDAO.getLowStockProducts();
             TableUtil.setRows(lowStockModel, lowStock);
             activityTabs.setTitleAt(1, "Low Stock Alerts (" + lowStock.size() + ")");
+            updateRequestBanner();
         } catch (SQLException e) {
             ErrorHandler.showDatabaseError(this, e, "load the dashboard");
         }
+    }
+
+    private void updateRequestBanner() throws SQLException {
+        if (!Session.canProcessRequests()) {
+            requestBanner.setVisible(false);
+            return;
+        }
+        int[] pending = CustomerRequestsPanel.pendingCounts();
+        List<String> parts = new java.util.ArrayList<>();
+        if (pending[0] > 0) {
+            parts.add(pending[0] + (pending[0] == 1 ? " customer stock request" : " customer stock requests"));
+        }
+        if (pending[1] > 0) {
+            parts.add(pending[1] + (pending[1] == 1 ? " new customer account" : " new customer accounts"));
+        }
+        requestBanner.setVisible(!parts.isEmpty());
+        lblBanner.setText(String.join(" and ", parts) + (pending[0] + pending[1] == 1 ? " is" : " are")
+                + " waiting for your review.");
     }
 }

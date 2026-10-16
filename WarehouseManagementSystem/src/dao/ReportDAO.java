@@ -20,6 +20,7 @@ import model.Release;
 import model.ReportData;
 import model.ReportType;
 import model.Status;
+import model.StockRequest;
 import model.StockTransfer;
 import model.Supplier;
 import model.User;
@@ -57,6 +58,8 @@ public class ReportDAO {
                 return releasingReport(from, to, warehouseId);
             case TRANSFERS:
                 return transferReport(from, to, warehouseId);
+            case CUSTOMER_REQUESTS:
+                return customerRequestReport(from, to, warehouseId);
             case WAREHOUSE_SUMMARY:
                 return warehouseSummary();
             case MONTHLY_SUMMARY:
@@ -273,6 +276,33 @@ public class ReportDAO {
         }
         report.setSummary(report.getRowCount() + " document(s), " + posted + " posted   |   Units released: "
                 + Formats.number(units) + "   (voided excluded)");
+        return report;
+    }
+
+    private ReportData customerRequestReport(LocalDate from, LocalDate to, int warehouseId) throws SQLException {
+        ReportData report = new ReportData(ReportType.CUSTOMER_REQUESTS.getTitle(),
+                new String[]{"Reference", "Request Date", "Customer", "Warehouse", "Items", "Units", "Status",
+                    "Release No.", "Reviewed By"},
+                new Class<?>[]{TEXT, TEXT, TEXT, TEXT, NUMBER, NUMBER, TEXT, TEXT, TEXT});
+        Map<String, Integer> perStatus = new TreeMap<>();
+        long releasedUnits = 0;
+        for (StockRequest r : new StockRequestDAO().searchRequests("", from, to, null, 0)) {
+            if (warehouseId > 0 && r.getWarehouseId() != warehouseId) {
+                continue;
+            }
+            report.addRow(r.getReferenceNo(), Formats.date(r.getRequestDate()), r.getCustomerName(),
+                    r.getWarehouseName(), r.getItemCount(), r.getTotalQuantity(), r.getStatus(),
+                    r.getReleaseReference(), r.getReviewedByName());
+            perStatus.merge(r.getStatus(), 1, Integer::sum);
+            if (Status.FULFILLED.equals(r.getStatus())) {
+                releasedUnits += r.getTotalQuantity();
+            }
+        }
+        StringBuilder summary = new StringBuilder(report.getRowCount() + " request(s)");
+        for (Map.Entry<String, Integer> entry : perStatus.entrySet()) {
+            summary.append("   |   ").append(entry.getKey()).append(": ").append(entry.getValue());
+        }
+        report.setSummary(summary + "   |   Units released: " + Formats.number(releasedUnits));
         return report;
     }
 

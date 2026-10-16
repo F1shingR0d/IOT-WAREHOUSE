@@ -51,7 +51,11 @@ public class BarChartPanel extends JPanel {
 
         int width = getWidth();
         int legendHeight = 26;
-        int rowHeight = Math.max(70, Math.min(96, (getHeight() - legendHeight) / warehouses.size()));
+        int space = (getHeight() - legendHeight) / warehouses.size();
+        // when the dashboard is short (small screen, or the customer-request banner is shown),
+        // the "x of y units" line is left out so the rows never overlap the legend
+        boolean compact = space < 70;
+        int rowHeight = compact ? Math.max(48, space) : Math.min(96, space);
         int barHeight = 16;
         int y = 4;
         for (Warehouse w : warehouses) {
@@ -77,11 +81,13 @@ public class BarChartPanel extends JPanel {
             }
 
             // line 3: units on hand and capacity
-            g.setFont(UITheme.FONT_SMALL);
-            fm = g.getFontMetrics();
-            g.setColor(UITheme.TEXT_MUTED);
-            g.drawString(Formats.number(w.getStockOnHand()) + " of " + Formats.number(w.getCapacity()) + " units",
-                    0, barY + barHeight + 4 + fm.getAscent());
+            if (!compact) {
+                g.setFont(UITheme.FONT_SMALL);
+                fm = g.getFontMetrics();
+                g.setColor(UITheme.TEXT_MUTED);
+                g.drawString(Formats.number(w.getStockOnHand()) + " of " + Formats.number(w.getCapacity()) + " units",
+                        0, barY + barHeight + 4 + fm.getAscent());
+            }
             y += rowHeight;
         }
 

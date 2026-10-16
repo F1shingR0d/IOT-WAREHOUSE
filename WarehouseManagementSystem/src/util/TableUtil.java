@@ -287,15 +287,24 @@ public final class TableUtil {
             case "POSTED":
             case "OK":
             case "Receiving":
+            case "FULFILLED":
+            case "IN STOCK":
                 return UITheme.SUCCESS;
             case "INACTIVE":
+            case "CANCELLED":
                 return UITheme.NEUTRAL;
             case "VOIDED":
             case "OUT":
+            case "REJECTED":
+            case "OUT OF STOCK":
                 return UITheme.DANGER;
             case "LOW":
             case "Release":
+            case "PENDING":
+            case "LOW STOCK":
                 return UITheme.WARNING;
+            case "APPROVED":
+                return UITheme.INFO;
             case "Transfer":
                 return UITheme.CHARCOAL;
             default:
@@ -319,6 +328,14 @@ public final class TableUtil {
             case "OK":
             case "LOW":
             case "OUT":
+            case "PENDING":
+            case "APPROVED":
+            case "REJECTED":
+            case "CANCELLED":
+            case "FULFILLED":
+            case "IN STOCK":
+            case "LOW STOCK":
+            case "OUT OF STOCK":
                 return true;
             default:
                 return false;

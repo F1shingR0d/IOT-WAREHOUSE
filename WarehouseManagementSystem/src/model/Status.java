@@ -16,6 +16,17 @@ public final class Status {
     /** Transaction was cancelled and its stock effect was reversed. */
     public static final String VOIDED = "VOIDED";
 
+    /** Customer account waiting for approval, or stock request waiting for review. */
+    public static final String PENDING = "PENDING";
+    /** Stock request accepted by the warehouse; the stock is not released yet. */
+    public static final String APPROVED = "APPROVED";
+    /** Stock request turned down by the warehouse (a reason is given). */
+    public static final String REJECTED = "REJECTED";
+    /** Stock request withdrawn by the customer while it was still pending. */
+    public static final String CANCELLED = "CANCELLED";
+    /** Stock request delivered: a release document was created for it. */
+    public static final String FULFILLED = "FULFILLED";
+
     private Status() {
     }
 }

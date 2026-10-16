@@ -16,7 +16,9 @@ import java.util.List;
  * Prepares the database when the program starts:
  *  1. makes sure the Derby server is running and the database exists,
  *  2. on the first run, creates the 13 tables (schema.sql) and loads
- *     the sample data (user accounts, sample_data.sql, sample transactions).
+ *     the sample data (user accounts, sample_data.sql, sample transactions),
+ *  3. creates the 3 Customer Portal tables (customer_portal.sql) if they
+ *     are missing, so older databases are upgraded automatically.
  */
 public class DatabaseInitializer {
 
@@ -61,7 +63,37 @@ public class DatabaseInitializer {
                 e.printStackTrace();
             }
         }
+        createCustomerPortalTables(listener);
         report(listener, "Database ready.");
+    }
+
+    /**
+     * Creates the 3 Customer Portal tables (customer_portal.sql) when they do
+     * not exist yet: on a new database, and once on a database created by an
+     * earlier version of the program. Then loads the demo customer accounts.
+     */
+    private static void createCustomerPortalTables(ProgressListener listener) throws SQLException, IOException {
+        try (Connection conn = DatabaseConnection.getConnection()) {
+            if (tableExists(conn, "CUSTOMER_ACCOUNTS")) {
+                return;
+            }
+            report(listener, "Creating the Customer Portal tables...");
+            conn.setAutoCommit(false);
+            try {
+                runScript(conn, "customer_portal.sql");
+                conn.commit();
+            } catch (SQLException | IOException | RuntimeException e) {
+                conn.rollback();
+                throw e;
+            }
+        }
+        try {
+            SampleDataSeeder.insertCustomerPortalData();
+        } catch (Exception e) {
+            // The portal still works without the demo accounts and requests.
+            System.err.println("Sample customer accounts could not be loaded: " + e.getMessage());
+            e.printStackTrace();
+        }
     }
 
     private static void report(ProgressListener listener, String message) {

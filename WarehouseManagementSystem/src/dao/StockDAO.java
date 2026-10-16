@@ -206,4 +206,56 @@ public class StockDAO {
         }
         return list;
     }
+
+    /**
+     * The Customer Portal catalog: every ACTIVE product with its stock in one
+     * warehouse. The LEFT JOIN also lists products that were never stocked
+     * there (quantity 0 = OUT OF STOCK).
+     *
+     * @param categoryId 0 = all categories
+     * @param keyword    SKU, product name or description, empty = all
+     */
+    public List<WarehouseStock> getCatalog(int warehouseId, int categoryId, String keyword) throws SQLException {
+        List<Object> params = new ArrayList<>();
+        String pattern = DaoUtil.likePattern(keyword);
+        StringBuilder sql = new StringBuilder(
+                "SELECT p.product_id, p.sku, p.product_name, c.category_name, p.unit, p.reorder_level, p.description, "
+                + "COALESCE(s.quantity, 0) AS quantity "
+                + "FROM PRODUCTS p "
+                + "INNER JOIN CATEGORIES c ON p.category_id = c.category_id "
+                + "LEFT JOIN WAREHOUSE_STOCK s ON s.product_id = p.product_id AND s.warehouse_id = ? ");
+        params.add(warehouseId);
+        sql.append("WHERE p.status = ? AND (UPPER(p.sku)").append(DaoUtil.LIKE)
+           .append(" OR UPPER(p.product_name)").append(DaoUtil.LIKE)
+           .append(" OR UPPER(COALESCE(p.description, ''))").append(DaoUtil.LIKE).append(")");
+        params.add(Status.ACTIVE);
+        params.add(pattern);
+        params.add(pattern);
+        params.add(pattern);
+        if (categoryId > 0) {
+            sql.append(" AND p.category_id = ?");
+            params.add(categoryId);
+        }
+        sql.append(" ORDER BY c.category_name, p.product_name");
+
+        List<WarehouseStock> list = new ArrayList<>();
+        try (Connection conn = DatabaseConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql.toString())) {
+            DaoUtil.bind(ps, params);
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    WarehouseStock stock = new WarehouseStock(warehouseId, rs.getInt("product_id"),
+                            rs.getInt("quantity"));
+                    stock.setSku(rs.getString("sku"));
+                    stock.setProductName(rs.getString("product_name"));
+                    stock.setCategoryName(rs.getString("category_name"));
+                    stock.setUnit(rs.getString("unit"));
+                    stock.setReorderLevel(rs.getInt("reorder_level"));
+                    stock.setDescription(rs.getString("description"));
+                    list.add(stock);
+                }
+            }
+        }
+        return list;
+    }
 }

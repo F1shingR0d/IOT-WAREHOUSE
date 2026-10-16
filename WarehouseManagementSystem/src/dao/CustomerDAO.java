@@ -42,6 +42,34 @@ public class CustomerDAO {
         }
     }
 
+    /**
+     * Updates only the contact details (used by customers in the Customer
+     * Portal; the name and status stay under the warehouse's control).
+     */
+    public boolean updateContactDetails(Customer customer) throws SQLException {
+        String sql = "UPDATE CUSTOMERS SET contact_person = ?, contact_no = ?, email = ?, address = ? "
+                + "WHERE customer_id = ?";
+        try (Connection conn = DatabaseConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            DaoUtil.setText(ps, 1, customer.getContactPerson());
+            ps.setString(2, customer.getContactNo().trim());
+            DaoUtil.setText(ps, 3, customer.getEmail());
+            DaoUtil.setText(ps, 4, customer.getAddress());
+            ps.setInt(5, customer.getCustomerId());
+            return ps.executeUpdate() > 0;
+        }
+    }
+
+    public Customer getCustomerById(int customerId) throws SQLException {
+        try (Connection conn = DatabaseConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(SELECT_CUSTOMERS + "WHERE customer_id = ?")) {
+            ps.setInt(1, customerId);
+            try (ResultSet rs = ps.executeQuery()) {
+                return rs.next() ? mapRow(rs) : null;
+            }
+        }
+    }
+
     private void fillStatement(PreparedStatement ps, Customer customer) throws SQLException {
         ps.setString(1, customer.getCustomerName().trim());
         DaoUtil.setText(ps, 2, customer.getContactPerson());
@@ -98,16 +126,20 @@ public class CustomerDAO {
             DaoUtil.bind(ps, params);
             try (ResultSet rs = ps.executeQuery()) {
                 while (rs.next()) {
-                    Customer customer = new Customer(rs.getInt("customer_id"), rs.getString("customer_name"),
-                            rs.getString("contact_person"), rs.getString("contact_no"));
-                    customer.setEmail(rs.getString("email"));
-                    customer.setAddress(rs.getString("address"));
-                    customer.setStatus(rs.getString("status"));
-                    list.add(customer);
+                    list.add(mapRow(rs));
                 }
             }
         }
         return list;
+    }
+
+    private Customer mapRow(ResultSet rs) throws SQLException {
+        Customer customer = new Customer(rs.getInt("customer_id"), rs.getString("customer_name"),
+                rs.getString("contact_person"), rs.getString("contact_no"));
+        customer.setEmail(rs.getString("email"));
+        customer.setAddress(rs.getString("address"));
+        customer.setStatus(rs.getString("status"));
+        return customer;
     }
 
     public boolean isNameTaken(String name, int excludeId) throws SQLException {

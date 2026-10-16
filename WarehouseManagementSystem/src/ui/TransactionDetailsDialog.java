@@ -51,7 +51,7 @@ public class TransactionDetailsDialog extends JDialog {
         top.add(lblTitle, BorderLayout.WEST);
         JLabel lblStatus = new JLabel(status);
         lblStatus.setFont(UITheme.FONT_HEADING);
-        lblStatus.setForeground(Status.VOIDED.equals(status) ? UITheme.DANGER : UITheme.SUCCESS);
+        lblStatus.setForeground(statusColor(status));
         top.add(lblStatus, BorderLayout.EAST);
 
         // header fields, two pairs per row
@@ -118,5 +118,22 @@ public class TransactionDetailsDialog extends JDialog {
         setSize(new Dimension(960, 600));
         setMinimumSize(new Dimension(640, 420));
         setLocationRelativeTo(owner);
+    }
+
+    /** Documents: POSTED green, VOIDED red. Customer requests use their own status colors. */
+    private static java.awt.Color statusColor(String status) {
+        switch (status) {
+            case Status.VOIDED:
+            case Status.REJECTED:
+                return UITheme.DANGER;
+            case Status.PENDING:
+                return UITheme.WARNING;
+            case Status.APPROVED:
+                return UITheme.INFO;
+            case Status.CANCELLED:
+                return UITheme.NEUTRAL;
+            default:
+                return UITheme.SUCCESS;
+        }
     }
 }

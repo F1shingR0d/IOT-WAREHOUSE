@@ -48,42 +48,11 @@ public class ReleaseDAO {
      * is saved.
      */
     public int saveRelease(Release release) throws SQLException, BusinessRuleException {
-        if (release.getItems().isEmpty()) {
-            throw new BusinessRuleException("Add at least one product before saving the release.");
-        }
         try (Connection conn = DatabaseConnection.getConnection()) {
             conn.setAutoCommit(false);
             try {
-                stockDAO.requireActiveWarehouse(conn, release.getWarehouseId());
-                String referenceNo = ReferenceNumber.next(conn, "REL", "RELEASES", release.getDocumentDate());
-
-                int releaseId;
-                try (PreparedStatement ps = DaoUtil.prepareInsert(conn, INSERT_HEADER)) {
-                    ps.setString(1, referenceNo);
-                    ps.setDate(2, Date.valueOf(release.getDocumentDate()));
-                    ps.setInt(3, release.getWarehouseId());
-                    ps.setInt(4, release.getCustomerId());
-                    ps.setInt(5, release.getUserId());
-                    DaoUtil.setText(ps, 6, release.getRemarks());
-                    releaseId = DaoUtil.insertAndGetId(ps);
-                }
-                try (PreparedStatement ps = conn.prepareStatement(INSERT_ITEM)) {
-                    for (ReleaseItem item : release.getItems()) {
-                        ps.setInt(1, releaseId);
-                        ps.setInt(2, item.getProductId());
-                        ps.setInt(3, item.getQuantity());
-                        ps.addBatch();
-                    }
-                    ps.executeBatch();
-                }
-                for (ReleaseItem item : release.getItems()) {
-                    stockDAO.deductStock(conn, release.getWarehouseId(), item.getProductId(), item.getQuantity());
-                }
+                int releaseId = saveRelease(conn, release);
                 conn.commit();
-
-                release.setReleaseId(releaseId);
-                release.setReferenceNo(referenceNo);
-                release.setStatus(Status.POSTED);
                 return releaseId;
             } catch (SQLException | BusinessRuleException | RuntimeException e) {
                 DaoUtil.rollback(conn, e);
@@ -92,7 +61,51 @@ public class ReleaseDAO {
         }
     }
 
-    /** Voids a release: the units are returned to the warehouse and the status becomes VOIDED. */
+    /**
+     * Inserts the release and deducts the stock using the caller's connection
+     * (no commit), so it can be part of a bigger transaction such as
+     * releasing a customer stock request.
+     */
+    int saveRelease(Connection conn, Release release) throws SQLException, BusinessRuleException {
+        if (release.getItems().isEmpty()) {
+            throw new BusinessRuleException("Add at least one product before saving the release.");
+        }
+        stockDAO.requireActiveWarehouse(conn, release.getWarehouseId());
+        String referenceNo = ReferenceNumber.next(conn, "REL", "RELEASES", release.getDocumentDate());
+
+        int releaseId;
+        try (PreparedStatement ps = DaoUtil.prepareInsert(conn, INSERT_HEADER)) {
+            ps.setString(1, referenceNo);
+            ps.setDate(2, Date.valueOf(release.getDocumentDate()));
+            ps.setInt(3, release.getWarehouseId());
+            ps.setInt(4, release.getCustomerId());
+            ps.setInt(5, release.getUserId());
+            DaoUtil.setText(ps, 6, release.getRemarks());
+            releaseId = DaoUtil.insertAndGetId(ps);
+        }
+        try (PreparedStatement ps = conn.prepareStatement(INSERT_ITEM)) {
+            for (ReleaseItem item : release.getItems()) {
+                ps.setInt(1, releaseId);
+                ps.setInt(2, item.getProductId());
+                ps.setInt(3, item.getQuantity());
+                ps.addBatch();
+            }
+            ps.executeBatch();
+        }
+        for (ReleaseItem item : release.getItems()) {
+            stockDAO.deductStock(conn, release.getWarehouseId(), item.getProductId(), item.getQuantity());
+        }
+        release.setReleaseId(releaseId);
+        release.setReferenceNo(referenceNo);
+        release.setStatus(Status.POSTED);
+        return releaseId;
+    }
+
+    /**
+     * Voids a release: the units are returned to the warehouse and the status
+     * becomes VOIDED. A customer request that this release delivered goes back
+     * to APPROVED so it can be released again.
+     */
     public void voidRelease(int releaseId) throws SQLException, BusinessRuleException {
         try (Connection conn = DatabaseConnection.getConnection()) {
             conn.setAutoCommit(false);
@@ -118,6 +131,13 @@ public class ReleaseDAO {
                     ps.setString(1, Status.VOIDED);
                     ps.setInt(2, releaseId);
                     ps.setString(3, Status.POSTED);
+                    ps.executeUpdate();
+                }
+                // A customer request delivered by this release is open again (APPROVED).
+                try (PreparedStatement ps = conn.prepareStatement(
+                        "UPDATE STOCK_REQUESTS SET status = ?, release_id = NULL WHERE release_id = ?")) {
+                    ps.setString(1, Status.APPROVED);
+                    ps.setInt(2, releaseId);
                     ps.executeUpdate();
                 }
                 conn.commit();

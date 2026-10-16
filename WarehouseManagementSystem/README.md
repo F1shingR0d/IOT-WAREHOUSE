@@ -7,6 +7,10 @@ It keeps a live stock balance for every product in every warehouse. Receiving ad
 deducts it, and a transfer moves it between warehouses. Every document is saved in one database
 transaction (all or nothing).
 
+Customers can also use the **Customer Portal**: they register an account, log in, browse the
+product catalog and request stock from a warehouse. Staff approve the account, then approve,
+reject or release each request. Releasing a request creates a normal release document.
+
 ---
 
 ## 1. Requirements
@@ -35,8 +39,11 @@ Double-click **`run.bat`**. It compiles the source code and starts the program.
 On the first run the program:
 1. starts the Derby database server on `localhost:1527`,
 2. creates the database `WarehouseDB` in the `data` folder,
-3. creates the 13 tables and loads sample data (3 warehouses, 25 products, suppliers,
-   customers and about 30 days of transactions).
+3. creates the 16 tables and loads sample data (3 warehouses, 25 products, suppliers,
+   customers, about 30 days of transactions, and Customer Portal accounts and requests).
+
+A database created by an earlier version of the program is upgraded automatically: the 3
+Customer Portal tables and their demo accounts are added the next time it starts.
 
 This takes a few seconds. Later runs start immediately.
 
@@ -54,6 +61,17 @@ This takes a few seconds. Later runs start immediately.
 
 Passwords are stored as PBKDF2 hashes, never as plain text. Change them from **File > Change Password**.
 
+### Customer Portal accounts
+On the login screen select **Login as: Customer**.
+
+| Username | Password | Customer | Notes |
+|---|---|---|---|
+| `northpoint` | `customer123` | Northpoint Retail Mart | Active. Has a pending and a rejected request |
+| `goldenharvest` | `customer123` | Golden Harvest Grocery | Active. Has an approved and a cancelled request |
+| `lakeside` | `customer123` | Lakeside Cafe & Bakery | **PENDING** registration: cannot log in until a manager approves it |
+
+New customers can create an account with **Register an account** on the login screen.
+
 ### What each role can do
 
 | Module / action | Admin | Manager | Staff |
@@ -62,7 +80,12 @@ Passwords are stored as PBKDF2 hashes, never as plain text. Change them from **F
 | Warehouses, Categories, Products, Suppliers, Customers | add, edit, delete | add, edit | view only |
 | Receiving, Releasing, Stock Transfers | create, void | create, void | create |
 | Reports (print / export CSV) | yes | yes | no |
+| Customer Requests (approve, reject, release requests; approve customer accounts) | yes | yes | no |
 | User Management | yes | no | no |
+
+Customers only see the Customer Portal: Home, Product Catalog (IN STOCK / LOW STOCK / OUT OF
+STOCK, never exact quantities), New Request, My Requests (cancel while PENDING) and My Profile.
+A customer can never see another customer's requests.
 
 ---
 
@@ -74,7 +97,7 @@ Passwords are stored as PBKDF2 hashes, never as plain text. Change them from **F
 | User / password | `app` / `app` |
 | Driver | Derby Network Client (`lib/derbyclient-10.16.1.1.jar`) |
 | Files | `data/WarehouseDB` (created automatically) |
-| Scripts | `src/database/schema.sql` (tables), `src/database/sample_data.sql` (master data) |
+| Scripts | `src/database/schema.sql` (tables 1-13), `src/database/customer_portal.sql` (tables 14-16), `src/database/sample_data.sql` (master data) |
 
 **Viewing the tables in NetBeans while the program runs:**
 **Services > Databases > New Connection > Java DB (Network)**. If NetBeans asks for the driver,
@@ -85,10 +108,11 @@ Do not start NetBeans' own "Java DB" server; the program starts its own.
 **Reset the database:** close the program and delete the `data` folder. The next run creates a
 fresh database with the sample data.
 
-### Tables (13)
+### Tables (16)
 `USERS`, `CATEGORIES`, `PRODUCTS`, `WAREHOUSES`, `SUPPLIERS`, `CUSTOMERS`, `WAREHOUSE_STOCK`,
-`RECEIVINGS`, `RECEIVING_ITEMS`, `RELEASES`, `RELEASE_ITEMS`, `STOCK_TRANSFERS`, `TRANSFER_ITEMS`.
-There are 19 foreign keys, covering one-to-one, one-to-many and many-to-many relationships
+`RECEIVINGS`, `RECEIVING_ITEMS`, `RELEASES`, `RELEASE_ITEMS`, `STOCK_TRANSFERS`, `TRANSFER_ITEMS`,
+and for the Customer Portal `CUSTOMER_ACCOUNTS`, `STOCK_REQUESTS`, `STOCK_REQUEST_ITEMS`.
+There are 26 foreign keys, covering one-to-one, one-to-many and many-to-many relationships
 (see `docs`).
 
 ---
@@ -107,7 +131,7 @@ src/
   ui/resources/             the I.O.T Warehouse logo (iot_logo.png)
   util/                     validation, password hashing, session, error handling, table helpers
 test/
-  WmsTestRunner.java        26 automated tests (run-tests.bat)
+  WmsTestRunner.java        40 automated tests (run-tests.bat)
 lib/                        Apache Derby 10.16.1.1 jars
 docs/                       project documentation
 ```
@@ -138,6 +162,13 @@ port 1533), so your real data is never touched. Results are saved to `build/test
 
 Stock demo: note a product's stock in **Inventory**, receive 10 units, and the stock goes up by 10.
 Void the receiving from **Receiving History** and the stock goes back down.
+
+Customer Portal demo:
+1. On the login screen click **Register an account** and create a customer. Try to log in: it is PENDING.
+2. Log in as `manager`. The dashboard shows a banner. Open **Customer Requests > Customer Accounts** and approve it.
+3. Log in as the new customer (Login as: Customer). Browse the **Product Catalog**, then send a **New Request**.
+4. Log in as `manager` again. In **Customer Requests** click **Approve**, then **Release Stock**.
+   A release document is created and the stock goes down. The customer sees the request as FULFILLED.
 
 ---
 

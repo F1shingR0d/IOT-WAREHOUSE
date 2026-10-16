@@ -1,10 +1,13 @@
 import dao.CategoryDAO;
+import dao.CustomerAccountDAO;
+import dao.CustomerDAO;
 import dao.DashboardDAO;
 import dao.ProductDAO;
 import dao.ReceivingDAO;
 import dao.ReleaseDAO;
 import dao.ReportDAO;
 import dao.StockDAO;
+import dao.StockRequestDAO;
 import dao.TransferDAO;
 import dao.UserDAO;
 import dao.WarehouseDAO;
@@ -25,6 +28,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.HashMap;
 import model.Category;
+import model.Customer;
+import model.CustomerAccount;
 import model.Product;
 import model.Receiving;
 import model.ReceivingItem;
@@ -32,6 +37,9 @@ import model.Release;
 import model.ReleaseItem;
 import model.ReportType;
 import model.Role;
+import model.Status;
+import model.StockRequest;
+import model.StockRequestItem;
 import model.StockTransfer;
 import model.TransferItem;
 import model.User;
@@ -59,6 +67,12 @@ public class WmsTestRunner {
 
     private static final Map<String, Product> products = new HashMap<>();
     private static final Map<String, Warehouse> warehouses = new HashMap<>();
+
+    // Customer Portal test data shared by T027 - T040
+    private static int portalCustomerId;
+    private static int portalAccountId;
+    private static int portalRequestId;
+    private static int portalReleaseId;
 
     public static void main(String[] args) throws Exception {
         // Separate database: other port, other folder.
@@ -361,7 +375,8 @@ public class WmsTestRunner {
             }
         });
 
-        test("T023", "Reports", "Generate all 12 reports", "Every report runs; totals match the dashboard", () -> {
+        test("T023", "Reports", "Generate all " + ReportType.values().length + " reports",
+                "Every report runs; totals match the dashboard", () -> {
             LocalDate from = LocalDate.now().minusDays(60);
             LocalDate to = LocalDate.now();
             long inventoryUnits = 0;
@@ -376,7 +391,7 @@ public class WmsTestRunner {
             }
             long dashboardUnits = new DashboardDAO().getStats().getUnitsOnHand();
             check(inventoryUnits == dashboardUnits, "inventory " + inventoryUnits + " vs dashboard " + dashboardUnits);
-            return "12 reports OK; inventory units = dashboard units = " + dashboardUnits;
+            return ReportType.values().length + " reports OK; inventory units = dashboard units = " + dashboardUnits;
         });
 
         test("T024", "Transactions", "Reference numbers of two documents on the same day", "Unique, in sequence", () -> {
@@ -408,6 +423,211 @@ public class WmsTestRunner {
             return low.size() + " low-stock product(s), e.g. " + low.get(0)[0] + " (" + low.get(0)[2] + " left)";
         });
 
+        // ------------------------------------------------------------------ Customer Portal
+        int managerId = new UserDAO().getUserByUsername("manager").getUserId();
+        int northpointId = new CustomerAccountDAO().getAccountByUsername("northpoint").getCustomerId();
+
+        test("T027", "Registration", "New customer registers (company details + login)",
+                "Account PENDING, customer INACTIVE until approved", () -> {
+            Customer customer = new Customer(0, "Test Trading Co.", "Tess Tan", "0917-555-0999");
+            customer.setEmail("orders@testtrading.example.com");
+            portalAccountId = new CustomerAccountDAO().register(customer, "testtrading", "secret123".toCharArray());
+            portalCustomerId = customer.getCustomerId();
+            CustomerAccount account = new CustomerAccountDAO().getAccountById(portalAccountId);
+            check(account.isPending(), "account status " + account.getStatus());
+            check(Status.INACTIVE.equals(new CustomerDAO().getCustomerById(portalCustomerId).getStatus()),
+                    "customer is not INACTIVE");
+            check(account.getPasswordHash().startsWith("pbkdf2$"), "password not hashed");
+            return "Account " + portalAccountId + " PENDING, customer " + portalCustomerId + " INACTIVE, password hashed";
+        });
+
+        test("T028", "Registration", "Duplicate username or customer name", "Refused; nothing is saved", () -> {
+            int before = new CustomerDAO().getCustomers().size();
+            Customer sameUser = new Customer(0, "Another Company", "A. Person", "0917-555-0998");
+            expectRule(() -> new CustomerAccountDAO().register(sameUser, "TestTrading", "secret123".toCharArray()),
+                    "duplicate username registered");
+            Customer sameName = new Customer(0, "test trading co.", "A. Person", "0917-555-0998");
+            expectRule(() -> new CustomerAccountDAO().register(sameName, "othername", "secret123".toCharArray()),
+                    "duplicate customer name registered");
+            check(new CustomerDAO().getCustomers().size() == before, "a customer record was created");
+            String state = sqlStateOf("INSERT INTO CUSTOMER_ACCOUNTS (customer_id, username, password_hash) "
+                    + "VALUES (" + portalCustomerId + ", 'testtrading', 'x')");
+            check("23505".equals(state), "UNIQUE constraint did not fire: " + state);
+            return "Both refused (case-insensitive) + UNIQUE constraint (SQLState 23505)";
+        });
+
+        test("T029", "Customer Login", "Pending account, then approved by a manager",
+                "Blocked while PENDING; can log in after approval", () -> {
+            CustomerAccount pending = new CustomerAccountDAO().authenticate("testtrading", "secret123".toCharArray());
+            check(pending != null && pending.isPending() && !pending.isActive(), "pending account not detected");
+            check(new CustomerAccountDAO().activateAccount(portalAccountId), "approve returned false");
+            CustomerAccount active = new CustomerAccountDAO().authenticate("testtrading", "secret123".toCharArray());
+            check(active.isActive() && Status.ACTIVE.equals(active.getCustomerStatus()), "not active after approval");
+            return "PENDING -> blocked; after approval account and customer are ACTIVE";
+        });
+
+        test("T030", "Customer Login", "Correct, wrong and staff credentials on the Customer login",
+                "Only the correct customer password is accepted", () -> {
+            CustomerAccount account = new CustomerAccountDAO().authenticate("northpoint", "customer123".toCharArray());
+            check(account != null && account.isActive(), "correct password rejected");
+            check(new CustomerAccountDAO().authenticate("northpoint", "wrong-pass".toCharArray()) == null,
+                    "wrong password accepted");
+            check(new CustomerAccountDAO().authenticate("admin", "admin123".toCharArray()) == null,
+                    "staff account accepted as a customer");
+            return "Accepted: " + account.getCustomerName() + "; wrong password and staff login refused";
+        });
+
+        test("T031", "Stock Request", "Customer submits a request with 2 products",
+                "Saved as PENDING with a REQ number; stock unchanged", () -> {
+            Warehouse wh = warehouses.get("WH-001");
+            Product mouse = products.get("ELE-1002");
+            Product paper = products.get("OFF-2001");
+            StockDAO stock = new StockDAO();
+            int mouseBefore = stock.getAvailable(wh.getWarehouseId(), mouse.getProductId());
+            StockRequest request = new StockRequest(portalCustomerId, wh.getWarehouseId());
+            request.setNeededBy(LocalDate.now().plusDays(3));
+            request.addItem(new StockRequestItem(mouse.getProductId(), mouse.getSku(), mouse.getProductName(),
+                    mouse.getUnit(), 5));
+            request.addItem(new StockRequestItem(paper.getProductId(), paper.getSku(), paper.getProductName(),
+                    paper.getUnit(), 10));
+            portalRequestId = new StockRequestDAO().submitRequest(request);
+            check(request.getReferenceNo().matches("REQ-\\d{8}-\\d{3}"), "bad reference " + request.getReferenceNo());
+            StockRequest saved = new StockRequestDAO().getRequestById(portalRequestId, portalCustomerId);
+            check(saved.isPending() && saved.getItems().size() == 2, "not saved correctly");
+            check(stock.getAvailable(wh.getWarehouseId(), mouse.getProductId()) == mouseBefore, "stock changed");
+            return request.getReferenceNo() + " PENDING, 2 items, stock still " + mouseBefore;
+        });
+
+        test("T032", "Stock Request", "Empty list, past 'needed by', quantity 0, inactive customer",
+                "All refused", () -> {
+            Warehouse wh = warehouses.get("WH-001");
+            Product p = products.get("OFF-2002");
+            StockRequest empty = new StockRequest(portalCustomerId, wh.getWarehouseId());
+            expectRule(() -> new StockRequestDAO().submitRequest(empty), "empty request saved");
+            StockRequest past = new StockRequest(portalCustomerId, wh.getWarehouseId());
+            past.setNeededBy(LocalDate.now().minusDays(1));
+            past.addItem(new StockRequestItem(p.getProductId(), p.getSku(), p.getProductName(), p.getUnit(), 1));
+            expectRule(() -> new StockRequestDAO().submitRequest(past), "past needed-by date saved");
+            int lakesideId = new CustomerAccountDAO().getAccountByUsername("lakeside").getCustomerId();
+            StockRequest inactive = new StockRequest(lakesideId, wh.getWarehouseId());
+            inactive.addItem(new StockRequestItem(p.getProductId(), p.getSku(), p.getProductName(), p.getUnit(), 1));
+            expectRule(() -> new StockRequestDAO().submitRequest(inactive), "inactive customer could request");
+            String state = sqlStateOf("INSERT INTO STOCK_REQUEST_ITEMS (request_id, product_id, quantity) VALUES ("
+                    + portalRequestId + ", " + p.getProductId() + ", 0)");
+            check("23513".equals(state), "CHECK quantity > 0 did not fire: " + state);
+            return "Program rules + CHECK constraint (SQLState 23513)";
+        });
+
+        test("T033", "Stock Request", "Cancel a pending request (owner and another customer)",
+                "Only the owner can cancel, only while PENDING", () -> {
+            Warehouse wh = warehouses.get("WH-002");
+            Product p = products.get("FNB-4001");
+            StockRequest request = new StockRequest(portalCustomerId, wh.getWarehouseId());
+            request.addItem(new StockRequestItem(p.getProductId(), p.getSku(), p.getProductName(), p.getUnit(), 3));
+            int id = new StockRequestDAO().submitRequest(request);
+            expectRule(() -> new StockRequestDAO().cancelRequest(id, northpointId), "another customer cancelled it");
+            new StockRequestDAO().cancelRequest(id, portalCustomerId);
+            check(Status.CANCELLED.equals(new StockRequestDAO().getRequestById(id, 0).getStatus()), "not CANCELLED");
+            expectRule(() -> new StockRequestDAO().cancelRequest(id, portalCustomerId), "cancelled twice");
+            return request.getReferenceNo() + " CANCELLED by its owner; other customer and second cancel refused";
+        });
+
+        test("T034", "Stock Request", "Manager approves, then releases the request",
+                "Release created, stock deducted, request FULFILLED", () -> {
+            Warehouse wh = warehouses.get("WH-001");
+            Product mouse = products.get("ELE-1002");
+            StockDAO stock = new StockDAO();
+            int before = stock.getAvailable(wh.getWarehouseId(), mouse.getProductId());
+            new StockRequestDAO().approveRequest(portalRequestId, managerId, "Will deliver tomorrow");
+            check(Status.APPROVED.equals(new StockRequestDAO().getRequestById(portalRequestId, 0).getStatus()),
+                    "not APPROVED");
+            Release release = new StockRequestDAO().releaseRequest(portalRequestId, managerId, LocalDate.now());
+            portalReleaseId = release.getReleaseId();
+            StockRequest after = new StockRequestDAO().getRequestById(portalRequestId, 0);
+            check(Status.FULFILLED.equals(after.getStatus()), "not FULFILLED");
+            check(release.getReferenceNo().equals(after.getReleaseReference()), "release not linked");
+            check(new ReleaseDAO().getReleaseById(portalReleaseId).getCustomerId() == portalCustomerId, "wrong customer");
+            int afterQty = stock.getAvailable(wh.getWarehouseId(), mouse.getProductId());
+            check(afterQty == before - 5, "stock " + before + " -> " + afterQty);
+            return "APPROVED -> " + release.getReferenceNo() + "; mouse stock " + before + " -> " + afterQty;
+        });
+
+        test("T035", "Stock Request", "Release a request bigger than the stock", "Refused; nothing changes", () -> {
+            Warehouse wh = warehouses.get("WH-001");
+            Product p = products.get("ELE-1001");
+            StockDAO stock = new StockDAO();
+            int before = stock.getAvailable(wh.getWarehouseId(), p.getProductId());
+            int releasesBefore = new ReleaseDAO().searchReleases("", null, null, null).size();
+            StockRequest request = new StockRequest(portalCustomerId, wh.getWarehouseId());
+            request.addItem(new StockRequestItem(p.getProductId(), p.getSku(), p.getProductName(), p.getUnit(),
+                    before + 1));
+            int id = new StockRequestDAO().submitRequest(request);
+            try {
+                new StockRequestDAO().releaseRequest(id, managerId, LocalDate.now());
+                throw new AssertionError("release was created");
+            } catch (InsufficientStockException expected) {
+                check(new StockRequestDAO().getRequestById(id, 0).isPending(), "status changed");
+                check(stock.getAvailable(wh.getWarehouseId(), p.getProductId()) == before, "stock changed");
+                check(new ReleaseDAO().searchReleases("", null, null, null).size() == releasesBefore, "release saved");
+                return "Rolled back: request still PENDING, stock still " + before;
+            }
+        });
+
+        test("T036", "Security", "Customer opens another customer's request",
+                "Not shown; lists contain own requests only", () -> {
+            check(new StockRequestDAO().getRequestById(portalRequestId, northpointId) == null, "other customer saw it");
+            List<StockRequest> own = new StockRequestDAO().searchRequests("", null, null, null, northpointId);
+            check(!own.isEmpty(), "northpoint has no requests");
+            for (StockRequest r : own) {
+                check(r.getCustomerId() == northpointId, "foreign request " + r.getReferenceNo());
+            }
+            return "Request hidden from other customers; " + own.size() + " own request(s) listed";
+        });
+
+        test("T037", "Void", "Void the release of a fulfilled request", "Stock returned; request back to APPROVED",
+                () -> {
+            Warehouse wh = warehouses.get("WH-001");
+            Product mouse = products.get("ELE-1002");
+            int before = new StockDAO().getAvailable(wh.getWarehouseId(), mouse.getProductId());
+            new ReleaseDAO().voidRelease(portalReleaseId);
+            StockRequest request = new StockRequestDAO().getRequestById(portalRequestId, 0);
+            check(Status.APPROVED.equals(request.getStatus()) && request.getReleaseId() == 0, "request not reopened");
+            check(new StockDAO().getAvailable(wh.getWarehouseId(), mouse.getProductId()) == before + 5,
+                    "stock not returned");
+            return "Release voided, 5 units returned, request APPROVED again (can be released again)";
+        });
+
+        test("T038", "Stock Request", "Reject without a reason, then with a reason", "Reason required; REJECTED",
+                () -> {
+            expectRule(() -> new StockRequestDAO().rejectRequest(portalRequestId, managerId, "  "),
+                    "no reason accepted");
+            new StockRequestDAO().rejectRequest(portalRequestId, managerId, "Customer asked to stop the order");
+            StockRequest request = new StockRequestDAO().getRequestById(portalRequestId, 0);
+            check(Status.REJECTED.equals(request.getStatus()), "not REJECTED");
+            check("Customer asked to stop the order".equals(request.getReviewNote()), "reason not saved");
+            expectRule(() -> new StockRequestDAO().releaseRequest(portalRequestId, managerId, LocalDate.now()),
+                    "rejected request released");
+            return "Reason required; REJECTED with reason; a rejected request cannot be released";
+        });
+
+        test("T039", "Security", "Customer session permissions", "No staff permissions; staff login ends it", () -> {
+            Session.startCustomer(new CustomerAccountDAO().getAccountByUsername("northpoint"));
+            check(Session.isCustomer() && Session.getCustomerId() == northpointId, "customer session not started");
+            check(!Session.canCreateTransactions() && !Session.canEditMasterData() && !Session.canViewReports()
+                    && !Session.canProcessRequests() && !Session.canManageUsers(), "customer has staff rights");
+            Session.start(new User(2, "m", "Manager", Role.MANAGER, "ACTIVE"));
+            check(!Session.isCustomer() && Session.canProcessRequests(), "staff session wrong");
+            Session.end();
+            return "Customer: portal only; Manager: can process requests";
+        });
+
+        test("T040", "Customer Login", "Account deactivated by staff", "Login is refused", () -> {
+            check(new CustomerAccountDAO().deactivateAccount(portalAccountId), "deactivate returned false");
+            CustomerAccount account = new CustomerAccountDAO().authenticate("testtrading", "secret123".toCharArray());
+            check(account != null && !account.isActive() && !account.isPending(), "still active");
+            return "Password correct but status INACTIVE -> access refused";
+        });
+
         DatabaseConnection.shutdown();
         writeResults();
         System.out.println();
@@ -435,6 +655,20 @@ public class WmsTestRunner {
         }
         results.add(new String[]{id, function, input, expected, actual, status});
         System.out.printf("%s  %-4s  %-14s %s%n        -> %s%n", id, status, function, input, actual);
+    }
+
+    private interface RuleAction {
+        void run() throws Exception;
+    }
+
+    /** The action must be refused with a BusinessRuleException. */
+    private static void expectRule(RuleAction action, String failMessage) throws Exception {
+        try {
+            action.run();
+        } catch (BusinessRuleException expected) {
+            return;
+        }
+        throw new AssertionError(failMessage);
     }
 
     private static void check(boolean condition, String message) {

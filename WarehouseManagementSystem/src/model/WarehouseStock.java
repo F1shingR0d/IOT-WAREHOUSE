@@ -14,6 +14,11 @@ public class WarehouseStock {
     public static final String STATUS_LOW = "LOW";
     public static final String STATUS_OUT = "OUT";
 
+    /** Availability shown to customers in the Customer Portal (never the exact quantity). */
+    public static final String IN_STOCK = "IN STOCK";
+    public static final String LOW_STOCK = "LOW STOCK";
+    public static final String OUT_OF_STOCK = "OUT OF STOCK";
+
     private int warehouseId;
     private String warehouseCode;
     private String warehouseName;
@@ -21,6 +26,7 @@ public class WarehouseStock {
     private String sku;
     private String productName;
     private String categoryName;
+    private String description;    // product description (Customer Portal catalog)
     private String unit;
     private int quantity;
     private int reorderLevel;
@@ -94,6 +100,14 @@ public class WarehouseStock {
         this.categoryName = categoryName;
     }
 
+    public String getDescription() {
+        return description;
+    }
+
+    public void setDescription(String description) {
+        this.description = description;
+    }
+
     public String getUnit() {
         return unit;
     }
@@ -145,5 +159,26 @@ public class WarehouseStock {
             return STATUS_OUT;
         }
         return quantity <= reorderLevel ? STATUS_LOW : STATUS_OK;
+    }
+
+    /** Customer-facing availability of this product in this warehouse. */
+    public String getAvailability() {
+        return availabilityOf(quantity, reorderLevel, 0);
+    }
+
+    /**
+     * IN STOCK, LOW STOCK or OUT OF STOCK.
+     *
+     * @param requested units the customer wants (0 = just browsing); asking for
+     *                  more than is available shows LOW STOCK
+     */
+    public static String availabilityOf(int available, int reorderLevel, int requested) {
+        if (available <= 0) {
+            return OUT_OF_STOCK;
+        }
+        if (available <= reorderLevel || available < requested) {
+            return LOW_STOCK;
+        }
+        return IN_STOCK;
     }
 }

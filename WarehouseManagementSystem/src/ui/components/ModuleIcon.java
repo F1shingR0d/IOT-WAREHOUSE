@@ -23,7 +23,7 @@ public class ModuleIcon implements Icon {
     /** The available pictures. */
     public enum Type {
         DASHBOARD, INVENTORY, RECEIVING, RELEASING, TRANSFER, PRODUCTS, CATEGORIES,
-        WAREHOUSES, SUPPLIERS, CUSTOMERS, REPORTS, USERS, LOGOUT,
+        WAREHOUSES, SUPPLIERS, CUSTOMERS, REPORTS, USERS, LOGOUT, REQUESTS,
         // button icons
         SAVE, EDIT, DELETE, CLEAR, SEARCH, USER, CALENDAR, PRINT, EXPORT, ADD, REMOVE, VOID, VIEW, CLOSE, KEY, LOGIN
     }
@@ -144,6 +144,14 @@ public class ModuleIcon implements Icon {
                 g.draw(path(9.5f, 4f, 9.5f, 1.5f, 1.5f, 1.5f, 1.5f, 14.5f, 9.5f, 14.5f, 9.5f, 12f));
                 g.draw(new Line2D.Float(5.5f, 8f, 14.5f, 8f));
                 g.draw(path(12f, 5.5f, 14.5f, 8f, 12f, 10.5f));
+                break;
+            case REQUESTS:   // clipboard with a checklist
+                g.draw(new RoundRectangle2D.Float(2.5f, 2.5f, 11f, 12f, 2f, 2f));
+                g.draw(new RoundRectangle2D.Float(5.5f, 1f, 5f, 3f, 1.2f, 1.2f));
+                g.draw(path(4.8f, 8f, 5.8f, 9f, 7.3f, 7.3f));
+                g.draw(new Line2D.Float(8.8f, 8f, 11.3f, 8f));
+                g.draw(path(4.8f, 11.5f, 5.8f, 12.5f, 7.3f, 10.8f));
+                g.draw(new Line2D.Float(8.8f, 11.5f, 11.3f, 11.5f));
                 break;
             case SAVE:
                 Path2D disk = path(1.5f, 1.5f, 11.5f, 1.5f, 14.5f, 4.5f, 14.5f, 14.5f, 1.5f, 14.5f);

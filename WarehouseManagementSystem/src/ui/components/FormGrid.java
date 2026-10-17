@@ -116,7 +116,7 @@ public class FormGrid extends JPanel implements Scrollable {
     }
 
     public static JLabel createLabel(String text, boolean required) {
-        String html = "<html><nobr>" + text + (required ? " <font color='#f87171'>*</font>" : "") + "</nobr></html>";
+        String html = "<html><nobr>" + text + (required ? " <font color='#d93025'>*</font>" : "") + "</nobr></html>";
         JLabel label = new JLabel(html);
         label.setFont(UITheme.FONT);
         label.setForeground(UITheme.TEXT);

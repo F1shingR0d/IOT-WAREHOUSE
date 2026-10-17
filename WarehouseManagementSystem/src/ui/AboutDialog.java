@@ -43,7 +43,7 @@ public class AboutDialog extends JDialog {
         JLabel text = new JLabel("<html><div style='width:430px'>"
                 + "<span style='font-size:18px'><b>" + UITheme.APP_NAME + "</b></span><br>"
                 + "<b>" + UITheme.APP_SUBTITLE + "</b><br>"
-                + "<span style='color:#a5aeb8'>Version 1.0</span><br><br>"
+                + "<span style='color:#5c6570'>Version 1.0</span><br><br>"
                 + "A desktop information system that records warehouses, products, receiving, "
                 + "releasing and stock transfers, keeping a live stock balance for every product "
                 + "in every warehouse.<br><br>"
@@ -59,7 +59,7 @@ public class AboutDialog extends JDialog {
 
         // black banner with the I.O.T Warehouse logo
         JPanel banner = new JPanel(new FlowLayout(FlowLayout.CENTER, 0, 10));
-        banner.setBackground(UITheme.BACKGROUND);
+        banner.setBackground(UITheme.HEADER);
         banner.setBorder(new javax.swing.border.MatteBorder(0, 0, 3, 0, UITheme.BRAND));
         banner.add(UITheme.logoLabel(96));
 

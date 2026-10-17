@@ -67,7 +67,7 @@ public class BarChartPanel extends JPanel {
             int percentWidth = fm.stringWidth(percentText);
             g.setColor(UITheme.TEXT);
             g.drawString(fit(w.getWarehouseName(), fm, width - percentWidth - 16), 0, y + fm.getAscent());
-            g.setColor(percent >= 70 ? colorFor(percent) : UITheme.PRIMARY_TEXT);
+            g.setColor(percent >= 70 ? UITheme.readable(colorFor(percent)) : UITheme.PRIMARY_TEXT);
             g.drawString(percentText, width - percentWidth - 2, y + fm.getAscent());
 
             // line 2: background track = full capacity, colored part = stock on hand

@@ -82,9 +82,11 @@ public class CustomerCatalogPanel extends JPanel implements Refreshable {
         filters.add(btnShowAll);
 
         TableUtil.setColumnWidths(table, 90, 230, 130, 55, 300, 135);
-        JLabel legend = UITheme.mutedLabel("<html><b style='color:#4ac868'>IN STOCK</b> available now &nbsp;&nbsp; "
-                + "<b style='color:#fb923c'>LOW STOCK</b> limited quantity &nbsp;&nbsp; "
-                + "<b style='color:#f86056'>OUT OF STOCK</b> not available at the moment &nbsp;&nbsp; "
+        JLabel legend = UITheme.mutedLabel("<html><b style='color:" + UITheme.readableHex(UITheme.SUCCESS)
+                + "'>IN STOCK</b> available now &nbsp;&nbsp; "
+                + "<b style='color:" + UITheme.readableHex(UITheme.WARNING) + "'>LOW STOCK</b> limited quantity &nbsp;&nbsp; "
+                + "<b style='color:" + UITheme.readableHex(UITheme.DANGER)
+                + "'>OUT OF STOCK</b> not available at the moment &nbsp;&nbsp; "
                 + "(double-click a product to request it)</html>");
         JPanel bottom = new JPanel(new BorderLayout(0, 4));
         bottom.setOpaque(false);

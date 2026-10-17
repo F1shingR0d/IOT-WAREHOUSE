@@ -15,7 +15,7 @@ import javax.swing.plaf.UIResource;
 import ui.UITheme;
 
 /**
- * The check box and radio button pictures of the dark theme, drawn with
+ * The check box and radio button pictures of the theme, drawn with
  * Java 2D: a gray outline that becomes amber when selected.
  */
 public final class ToggleIcon implements Icon, UIResource {

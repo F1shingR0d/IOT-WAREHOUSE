@@ -21,7 +21,7 @@ import ui.UITheme;
 
 /**
  * Look of the standard JButtons (the buttons of message dialogs, the file
- * chooser and the calendar): dark rounded buttons, and an amber one for the
+ * chooser and the calendar): light gray rounded buttons, and an amber one for the
  * default button. The program's own buttons are FlatButtons.
  */
 public class DarkButtonUI extends BasicButtonUI {

@@ -51,8 +51,9 @@ import ui.components.ToggleIcon;
  * One place for the colors, fonts and common widgets of the program, so that
  * every screen looks consistent (AWT Color, Font and Dimension are defined here).
  *
- * The program uses a dark theme in the I.O.T Warehouse brand colors: amber
- * text and accents on near-black screens, with large, readable fonts.
+ * The program uses the I.O.T Warehouse brand colors: a dark header and
+ * sidebar with amber accents, and a light work area (white cards and tables,
+ * dark text) with large, readable fonts.
  */
 public final class UITheme {
 
@@ -63,12 +64,14 @@ public final class UITheme {
 
     public static final Color PRIMARY = BRAND;
     public static final Color PRIMARY_DARK = new Color(214, 140, 0);
-    /** Dark amber tint for hover and highlight backgrounds. */
-    public static final Color PRIMARY_LIGHT = new Color(58, 44, 16);
-    /** Amber used for text (readable on the dark backgrounds). */
-    public static final Color PRIMARY_TEXT = BRAND;
+    /** Light amber tint for hover and highlight backgrounds. */
+    public static final Color PRIMARY_LIGHT = new Color(255, 243, 214);
+    /** Dark amber used for text (amber itself is too light to read on white). */
+    public static final Color PRIMARY_TEXT = new Color(168, 100, 0);
 
-    // ---------------------------------------------------------------- status colors (light, for dark screens)
+    // ---------------------------------------------------------------- status colors
+    // Bright colors for badges, buttons, bars and icons. For text on the light
+    // screens use readable(color), which gives a darker shade of the same color.
     public static final Color SUCCESS = new Color(74, 200, 104);
     public static final Color DANGER = new Color(248, 96, 86);
     public static final Color WARNING = new Color(251, 146, 60);
@@ -76,34 +79,43 @@ public final class UITheme {
     public static final Color INFO = new Color(56, 189, 248);
     public static final Color NEUTRAL = new Color(150, 158, 168);
 
-    // ---------------------------------------------------------------- surfaces
-    public static final Color BACKGROUND = BRAND_BLACK;
+    // ---------------------------------------------------------------- dark "chrome": header, sidebar, status bar
+    public static final Color HEADER = BRAND_BLACK;
     public static final Color SIDEBAR = new Color(8, 11, 14);
     public static final Color SIDEBAR_HOVER = new Color(26, 32, 40);
     public static final Color SIDEBAR_TEXT = new Color(236, 239, 242);
     public static final Color SIDEBAR_SECTION = BRAND;
-    public static final Color CARD = new Color(15, 20, 25);
-    /** Thin amber-brown line around the cards. */
-    public static final Color CARD_BORDER = new Color(112, 82, 36);
-    public static final Color BORDER = new Color(40, 47, 56);
-    public static final Color INPUT = new Color(19, 25, 32);
-    public static final Color INPUT_BORDER = new Color(60, 70, 83);
-    public static final Color INPUT_DISABLED = new Color(25, 31, 38);
-    public static final Color BUTTON_DARK = new Color(22, 28, 36);
-    public static final Color BUTTON_BORDER = new Color(66, 78, 92);
+    /** Text on the dark header, sidebar, status bar, splash and login logo panel. */
+    public static final Color CHROME_TEXT = new Color(238, 241, 244);
+    public static final Color CHROME_MUTED = new Color(165, 174, 184);
+    public static final Color CHROME_BORDER = new Color(40, 47, 56);
+
+    // ---------------------------------------------------------------- light work area
+    public static final Color BACKGROUND = new Color(245, 246, 248);
+    public static final Color CARD = Color.WHITE;
+    /** Thin gray line around the cards. */
+    public static final Color CARD_BORDER = new Color(221, 225, 230);
+    public static final Color BORDER = new Color(227, 230, 234);
+    public static final Color INPUT = Color.WHITE;
+    public static final Color INPUT_BORDER = new Color(197, 203, 211);
+    public static final Color INPUT_DISABLED = new Color(242, 243, 245);
+    /** Background of the outline (secondary) buttons, e.g. Reset. */
+    public static final Color BUTTON_DARK = new Color(243, 244, 246);
+    public static final Color BUTTON_HOVER = new Color(232, 234, 237);
+    public static final Color BUTTON_BORDER = new Color(197, 203, 211);
 
     // ---------------------------------------------------------------- text
-    public static final Color TEXT = new Color(238, 241, 244);
-    public static final Color TEXT_MUTED = new Color(165, 174, 184);
-    public static final Color TEXT_DIM = new Color(112, 121, 132);
+    public static final Color TEXT = new Color(28, 32, 36);
+    public static final Color TEXT_MUTED = new Color(92, 101, 112);
+    public static final Color TEXT_DIM = new Color(150, 157, 166);
 
     // ---------------------------------------------------------------- tables
-    public static final Color TABLE_HEADER = new Color(83, 61, 28);
-    public static final Color TABLE_HEADER_TEXT = new Color(252, 243, 226);
-    public static final Color TABLE_ROW = new Color(12, 18, 22);
-    public static final Color TABLE_STRIPE = new Color(20, 26, 33);
-    public static final Color TABLE_GRID = new Color(30, 37, 45);
-    public static final Color TABLE_SELECTION = new Color(104, 76, 22);
+    public static final Color TABLE_HEADER = new Color(241, 243, 245);
+    public static final Color TABLE_HEADER_TEXT = TEXT;
+    public static final Color TABLE_ROW = Color.WHITE;
+    public static final Color TABLE_STRIPE = new Color(250, 251, 252);
+    public static final Color TABLE_GRID = new Color(225, 228, 232);
+    public static final Color TABLE_SELECTION = new Color(255, 231, 179);
 
     // ---------------------------------------------------------------- fonts (large and readable)
     public static final String FONT_NAME = chooseFontName();
@@ -135,8 +147,8 @@ public final class UITheme {
     // ---------------------------------------------------------------- look and feel
 
     /**
-     * Installs the dark theme: the cross-platform Metal look and feel with a
-     * dark color theme, our own painted combo boxes, scroll bars, tabs, buttons,
+     * Installs the theme: the cross-platform Metal look and feel with our own
+     * color theme, our own painted combo boxes, scroll bars, tabs, buttons,
      * check boxes and radio buttons, and the same large font everywhere.
      */
     public static void install() {
@@ -226,8 +238,8 @@ public final class UITheme {
         put("Button.background", BUTTON_DARK);
 
         put("MenuBar.background", SIDEBAR);
-        put("MenuBar.foreground", TEXT);
-        UIManager.put("MenuBar.border", BorderFactory.createMatteBorder(0, 0, 1, 0, BORDER));
+        put("MenuBar.foreground", CHROME_TEXT);
+        UIManager.put("MenuBar.border", BorderFactory.createMatteBorder(0, 0, 1, 0, CHROME_BORDER));
         for (String menu : new String[]{"Menu", "MenuItem", "CheckBoxMenuItem", "RadioButtonMenuItem"}) {
             put(menu + ".background", CARD);
             put(menu + ".foreground", TEXT);
@@ -242,11 +254,11 @@ public final class UITheme {
         put("Separator.foreground", BORDER);
         put("Separator.background", CARD);
         put("ToolTip.background", new Color(28, 35, 44));
-        put("ToolTip.foreground", TEXT);
+        put("ToolTip.foreground", CHROME_TEXT);
         UIManager.put("ToolTip.border", BorderFactory.createCompoundBorder(
                 BorderFactory.createLineBorder(CARD_BORDER), new EmptyBorder(4, 8, 4, 8)));
         put("ProgressBar.foreground", BRAND);
-        put("ProgressBar.background", new Color(30, 37, 45));
+        put("ProgressBar.background", TABLE_GRID);
         put("ProgressBar.selectionBackground", Color.BLACK);
         put("ProgressBar.selectionForeground", Color.BLACK);
         UIManager.put("ProgressBar.border", BorderFactory.createEmptyBorder());
@@ -291,24 +303,24 @@ public final class UITheme {
         return label;
     }
 
-    /** Amber card title such as "Product Details". */
+    /** Dark bold card title such as "Product Details". */
     public static JLabel headingLabel(String text) {
         JLabel label = new JLabel(text);
         label.setFont(FONT_HEADING);
-        label.setForeground(BRAND);
+        label.setForeground(TEXT);
         return label;
     }
 
-    /** Amber bold label, e.g. "Search:". */
+    /** Bold label in front of a filter, e.g. "Search:". */
     public static JLabel accentLabel(String text) {
         JLabel label = new JLabel(text);
         label.setFont(FONT_BOLD);
-        label.setForeground(BRAND);
+        label.setForeground(TEXT);
         return label;
     }
 
     /**
-     * The title area at the top of every screen: a big amber title, a short
+     * The title area at the top of every screen: a big dark title, a short
      * description and optional buttons on the right.
      */
     public static JPanel pageHeader(String title, String subtitle, JComponent... actions) {
@@ -326,10 +338,10 @@ public final class UITheme {
         texts.setLayout(new BoxLayout(texts, BoxLayout.Y_AXIS));
         JLabel lblTitle = new JLabel(title);
         lblTitle.setFont(FONT_TITLE);
-        lblTitle.setForeground(BRAND);
+        lblTitle.setForeground(TEXT);
         lblTitle.setAlignmentX(Component.LEFT_ALIGNMENT);
         lblSubtitle.setFont(FONT.deriveFont(17f));
-        lblSubtitle.setForeground(TEXT);
+        lblSubtitle.setForeground(TEXT_MUTED);
         lblSubtitle.setAlignmentX(Component.LEFT_ALIGNMENT);
         texts.add(lblTitle);
         texts.add(lblSubtitle);
@@ -501,5 +513,35 @@ public final class UITheme {
         double luminance = (0.2126 * background.getRed() + 0.7152 * background.getGreen()
                 + 0.0722 * background.getBlue()) / 255;
         return luminance > 0.55 ? Color.BLACK : Color.WHITE;
+    }
+
+    /**
+     * A darker shade of a color that can be read as text on the white screens
+     * (contrast of at least 4.5 : 1, the WCAG level for normal text).
+     * Example: the bright status green becomes a darker green.
+     */
+    public static Color readable(Color color) {
+        Color c = color;
+        while (contrastWithWhite(c) < 4.5) {
+            c = new Color((int) (c.getRed() * 0.9), (int) (c.getGreen() * 0.9), (int) (c.getBlue() * 0.9));
+        }
+        return c;
+    }
+
+    /** The same as readable(), written as #rrggbb for HTML labels. */
+    public static String readableHex(Color color) {
+        Color c = readable(color);
+        return String.format("#%02x%02x%02x", c.getRed(), c.getGreen(), c.getBlue());
+    }
+
+    private static double contrastWithWhite(Color c) {
+        double luminance = 0.2126 * channel(c.getRed()) + 0.7152 * channel(c.getGreen())
+                + 0.0722 * channel(c.getBlue());
+        return 1.05 / (luminance + 0.05);
+    }
+
+    private static double channel(int value) {
+        double v = value / 255.0;
+        return v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4);
     }
 }

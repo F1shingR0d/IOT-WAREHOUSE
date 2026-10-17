@@ -135,7 +135,7 @@ public class CustomerRequestsPanel extends JPanel implements Refreshable {
         filters.add(btnReset);
 
         TableUtil.hideColumn(requestTable, 0);   // the ID column stays in the model only
-        TableUtil.setColumnWidths(requestTable, 130, 95, 95, 180, 170, 50, 60, 105, 120);
+        TableUtil.setColumnWidths(requestTable, 140, 95, 95, 175, 165, 50, 60, 105, 120);
 
         JPanel bottom = new JPanel(new BorderLayout());
         bottom.setOpaque(false);

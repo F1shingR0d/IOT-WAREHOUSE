@@ -21,8 +21,8 @@ import javax.swing.plaf.basic.ComboPopup;
 import ui.UITheme;
 
 /**
- * Dark combo box painted with Java 2D: a rounded field with a chevron, an
- * amber outline while it has the focus, and a dark drop-down list.
+ * Combo box painted with Java 2D: a white rounded field with a chevron, an
+ * amber outline while it has the focus, and a white drop-down list.
  * Registered for every JComboBox in UITheme.install().
  */
 public class DarkComboBoxUI extends BasicComboBoxUI {

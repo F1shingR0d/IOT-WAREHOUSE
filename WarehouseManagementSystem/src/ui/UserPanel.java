@@ -53,7 +53,7 @@ public class UserPanel extends CrudPanel<User> {
             cboFilterRole.addItem(role);
         }
         buildUI();
-        TableUtil.setColumnWidths(table, 45, 120, 200, 150, 80, 150);
+        TableUtil.setColumnWidths(table, 45, 110, 180, 140, 80, 140);
     }
 
     @Override

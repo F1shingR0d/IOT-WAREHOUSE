@@ -98,7 +98,7 @@ public class RegisterDialog extends JDialog {
         header.setOpaque(false);
         JLabel title = new JLabel("Create a Customer Account");
         title.setFont(UITheme.FONT_TITLE.deriveFont(28f));
-        title.setForeground(UITheme.BRAND);
+        title.setForeground(UITheme.TEXT);
         header.add(title, BorderLayout.NORTH);
         header.add(UITheme.mutedLabel("Register once, then request stock from our warehouses."),
                 BorderLayout.SOUTH);

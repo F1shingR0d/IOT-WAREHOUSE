@@ -63,7 +63,7 @@ public class CustomerHomePanel extends JPanel implements Refreshable {
         cards.add(cardRejected);
 
         JTable recentTable = TableUtil.createTable(recentModel);
-        TableUtil.setColumnWidths(recentTable, 130, 95, 170, 50, 60, 105);
+        TableUtil.setColumnWidths(recentTable, 140, 95, 165, 50, 60, 105);
         RoundedPanel recentCard = new RoundedPanel(new BorderLayout(0, 10));
         recentCard.add(UITheme.headingLabel("Recent Requests"), BorderLayout.NORTH);
         recentCard.add(UITheme.scroll(recentTable), BorderLayout.CENTER);
@@ -71,7 +71,7 @@ public class CustomerHomePanel extends JPanel implements Refreshable {
 
         RoundedPanel helpCard = new RoundedPanel(new BorderLayout(0, 12));
         helpCard.add(UITheme.headingLabel("How It Works"), BorderLayout.NORTH);
-        String step = "<p style='margin-bottom:8px'><b style='color:#fbab06'>%d.</b>&nbsp; %s</p>";
+        String step = "<p style='margin-bottom:8px'><b style='color:#a86400'>%d.</b>&nbsp; %s</p>";
         JLabel steps = new JLabel("<html><div style='width:235px'>"
                 + String.format(step, 1, "Browse the <b>Product Catalog</b> to see what each warehouse has in stock.")
                 + String.format(step, 2, "Create a <b>New Request</b>: choose a warehouse, then add the products "
@@ -79,7 +79,7 @@ public class CustomerHomePanel extends JPanel implements Refreshable {
                 + String.format(step, 3, "The warehouse reviews it. It becomes <b>APPROVED</b>, or <b>REJECTED</b> "
                         + "with a reason.")
                 + String.format(step, 4, "When the stock is released to you, the request becomes <b>FULFILLED</b>.")
-                + "<p style='color:#a5aeb8'>Tip: you can cancel a request while it is still PENDING "
+                + "<p style='color:#5c6570'>Tip: you can cancel a request while it is still PENDING "
                 + "(My Requests).</p></div></html>");
         steps.setFont(UITheme.FONT);
         steps.setForeground(UITheme.TEXT);

@@ -95,12 +95,12 @@ public final class TableUtil {
         };
         table.setFont(UITheme.FONT_TABLE);
         table.setRowHeight(34);
-        table.setShowVerticalLines(false);
+        table.setShowVerticalLines(true);
         table.setShowHorizontalLines(true);
         table.setGridColor(UITheme.TABLE_GRID);
-        table.setIntercellSpacing(new Dimension(0, 1));
+        table.setIntercellSpacing(new Dimension(1, 1));
         table.setSelectionBackground(UITheme.TABLE_SELECTION);
-        table.setSelectionForeground(Color.WHITE);
+        table.setSelectionForeground(UITheme.TEXT);
         table.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
         table.setFillsViewportHeight(true);
         table.setAutoCreateRowSorter(true);
@@ -390,10 +390,10 @@ public final class TableUtil {
                 setFont(UITheme.FONT_SECTION.deriveFont(12.5f));
                 setForeground(UITheme.textOn(badge));
             } else if (status != null) {
-                setForeground(status);
+                setForeground(UITheme.readable(status));   // darker shade, readable on white
                 setFont(UITheme.FONT_TABLE_BOLD);
             } else {
-                setForeground(isSelected ? Color.WHITE : UITheme.TEXT);
+                setForeground(UITheme.TEXT);
                 setFont(UITheme.FONT_TABLE);
             }
             return this;
@@ -424,11 +424,11 @@ public final class TableUtil {
         }
     }
 
-    /** Dark gold header with light bold text and a sort arrow. */
+    /** Light gray header with dark bold text, thin grid lines and a sort arrow. */
     private static final class HeaderRenderer extends DefaultTableCellRenderer {
         private static final long serialVersionUID = 1L;
         private final CompoundBorder border = new CompoundBorder(
-                new MatteBorder(0, 0, 1, 0, new Color(126, 94, 42)), new EmptyBorder(9, 10, 9, 10));
+                new MatteBorder(0, 0, 1, 1, UITheme.CARD_BORDER), new EmptyBorder(9, 10, 9, 10));
 
         @Override
         public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected,
@@ -472,7 +472,7 @@ public final class TableUtil {
         public void paintIcon(Component c, Graphics graphics, int x, int y) {
             Graphics2D g = (Graphics2D) graphics.create();
             g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-            g.setColor(UITheme.PRIMARY);
+            g.setColor(UITheme.PRIMARY_TEXT);
             int[] xs = {x, x + 8, x + 4};
             int[] ys = ascending ? new int[]{y + 6, y + 6, y + 1} : new int[]{y + 1, y + 1, y + 6};
             g.fillPolygon(xs, ys, 3);

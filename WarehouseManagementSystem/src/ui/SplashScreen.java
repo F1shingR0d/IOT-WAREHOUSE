@@ -51,7 +51,7 @@ public class SplashScreen extends JWindow {
         center.add(name, c);
         JLabel subtitle = new JLabel("Warehouses  |  Products  |  Receiving  |  Releasing  |  Stock Transfers");
         subtitle.setFont(UITheme.FONT);
-        subtitle.setForeground(UITheme.TEXT);
+        subtitle.setForeground(UITheme.CHROME_TEXT);
         c.gridy++;
         center.add(subtitle, c);
         background.add(center, BorderLayout.CENTER);
@@ -59,11 +59,11 @@ public class SplashScreen extends JWindow {
         JPanel bottom = new JPanel(new BorderLayout(0, 6));
         bottom.setOpaque(false);
         lblStatus.setFont(UITheme.FONT_SMALL);
-        lblStatus.setForeground(UITheme.TEXT_MUTED);
+        lblStatus.setForeground(UITheme.CHROME_MUTED);
         progress.setIndeterminate(true);
         progress.setBorderPainted(false);
         progress.setForeground(UITheme.BRAND);
-        progress.setBackground(UITheme.TABLE_GRID);
+        progress.setBackground(UITheme.CHROME_BORDER);
         progress.setPreferredSize(new java.awt.Dimension(10, 6));
         bottom.add(lblStatus, BorderLayout.NORTH);
         bottom.add(progress, BorderLayout.SOUTH);

@@ -16,7 +16,7 @@ import ui.UITheme;
 /**
  * A modern flat button painted with Java 2D, optionally with a small icon.
  * Two styles: filled (amber or another color, gets lighter on hover) and
- * outline (dark button with a gray line that turns amber on hover).
+ * outline (light gray button with a gray line that turns amber on hover).
  * The text is black or white, whichever is readable on the button color.
  */
 public class FlatButton extends JButton {
@@ -57,12 +57,12 @@ public class FlatButton extends JButton {
         setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
     }
 
-    /** Dark button with a gray outline, for secondary actions. */
+    /** Light gray button with a gray outline, for secondary actions. */
     public static FlatButton outline(String text) {
         return new FlatButton(text, UITheme.BUTTON_DARK, true, null);
     }
 
-    /** Dark outline button with an icon. */
+    /** Outline button with an icon. */
     public static FlatButton outline(String text, ModuleIcon.Type iconType) {
         return new FlatButton(text, UITheme.BUTTON_DARK, true, iconType);
     }
@@ -101,15 +101,15 @@ public class FlatButton extends JButton {
         Color iconColor;
         if (!isEnabled()) {
             fill = outline ? UITheme.CARD : UITheme.INPUT_DISABLED;
-            line = outline ? UITheme.BORDER : null;
+            line = UITheme.BORDER;
             text = UITheme.TEXT_DIM;
             iconColor = text;
         } else if (outline) {
             Color hoverLine = accent != null ? accent : UITheme.BRAND;
-            fill = pressed ? UITheme.SIDEBAR_HOVER : hover ? new Color(28, 35, 44) : UITheme.BUTTON_DARK;
+            fill = pressed ? UITheme.TABLE_GRID : hover ? UITheme.BUTTON_HOVER : UITheme.BUTTON_DARK;
             line = hover || isFocusOwner() ? hoverLine : UITheme.BUTTON_BORDER;
             text = getForeground();
-            iconColor = accent != null ? accent : text;
+            iconColor = accent != null ? UITheme.readable(accent) : text;
         } else {
             fill = pressed ? color.darker() : hover ? blend(color, Color.WHITE, 0.18f) : color;
             text = getForeground();

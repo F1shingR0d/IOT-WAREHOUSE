@@ -13,8 +13,8 @@ import javax.swing.plaf.basic.BasicTabbedPaneUI;
 import ui.UITheme;
 
 /**
- * Flat dark tabs: the selected tab is written in amber and underlined,
- * the others are gray. Registered for every JTabbedPane in UITheme.install().
+ * Flat tabs: the selected tab has a light amber background, dark amber text
+ * and an amber underline; the others are gray. Registered for every JTabbedPane in UITheme.install().
  */
 public class DarkTabbedPaneUI extends BasicTabbedPaneUI {
 
@@ -63,7 +63,7 @@ public class DarkTabbedPaneUI extends BasicTabbedPaneUI {
         Graphics2D g = (Graphics2D) graphics.create();
         g.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
         g.setFont(font);
-        g.setColor(selected ? UITheme.BRAND : tabPane.isEnabledAt(index) ? UITheme.TEXT_MUTED : UITheme.TEXT_DIM);
+        g.setColor(selected ? UITheme.PRIMARY_TEXT : tabPane.isEnabledAt(index) ? UITheme.TEXT_MUTED : UITheme.TEXT_DIM);
         g.drawString(title, textRect.x, textRect.y + metrics.getAscent());
         g.dispose();
     }

@@ -7,10 +7,10 @@ import javax.swing.plaf.metal.DefaultMetalTheme;
 import ui.UITheme;
 
 /**
- * Dark color theme for Swing's built-in Metal look and feel. Every standard
+ * Color theme for Swing's built-in Metal look and feel. Every standard
  * component (menus, dialogs, file chooser, tooltips...) takes its colors from
- * here, so the whole program follows the I.O.T Warehouse dark theme without
- * any external library.
+ * here, so the whole program follows the I.O.T Warehouse theme (light work
+ * area, amber accents) without any external library.
  */
 public class DarkMetalTheme extends DefaultMetalTheme {
 
@@ -20,7 +20,7 @@ public class DarkMetalTheme extends DefaultMetalTheme {
 
     @Override
     public String getName() {
-        return "I.O.T Warehouse Dark";
+        return "I.O.T Warehouse";
     }
 
     // the "primary" colors are used for selections and focus: amber
@@ -39,7 +39,7 @@ public class DarkMetalTheme extends DefaultMetalTheme {
         return c(UITheme.BRAND);
     }
 
-    // the "secondary" colors are used for borders and backgrounds: dark grays
+    // the "secondary" colors are used for borders and backgrounds: light grays
     @Override
     protected ColorUIResource getSecondary1() {
         return c(UITheme.BUTTON_BORDER);
@@ -57,7 +57,7 @@ public class DarkMetalTheme extends DefaultMetalTheme {
 
     @Override
     protected ColorUIResource getWhite() {
-        return c(UITheme.BORDER);
+        return c(Color.WHITE);
     }
 
     @Override

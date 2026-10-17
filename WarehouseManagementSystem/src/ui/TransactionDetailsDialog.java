@@ -47,11 +47,11 @@ public class TransactionDetailsDialog extends JDialog {
         top.setOpaque(false);
         JLabel lblTitle = new JLabel(title);
         lblTitle.setFont(UITheme.FONT_TITLE.deriveFont(28f));
-        lblTitle.setForeground(UITheme.BRAND);
+        lblTitle.setForeground(UITheme.TEXT);
         top.add(lblTitle, BorderLayout.WEST);
         JLabel lblStatus = new JLabel(status);
         lblStatus.setFont(UITheme.FONT_HEADING);
-        lblStatus.setForeground(statusColor(status));
+        lblStatus.setForeground(UITheme.readable(statusColor(status)));
         top.add(lblStatus, BorderLayout.EAST);
 
         // header fields, two pairs per row

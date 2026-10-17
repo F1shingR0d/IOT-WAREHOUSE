@@ -107,7 +107,7 @@ public class LoginFrame extends JFrame {
 
         JLabel title = new JLabel("SYSTEM LOGIN");
         title.setFont(UITheme.FONT_TITLE.deriveFont(34f));
-        title.setForeground(UITheme.BRAND);
+        title.setForeground(UITheme.TEXT);
         lblSubtitle.setFont(UITheme.FONT);
 
         // Staff / Customer toggle (JRadioButton in a ButtonGroup)
@@ -147,7 +147,7 @@ public class LoginFrame extends JFrame {
         chkShowPassword.setOpaque(false);
         chkShowPassword.setFont(UITheme.FONT_SMALL);
         lblMessage.setFont(UITheme.FONT_SMALL_BOLD);
-        lblMessage.setForeground(UITheme.DANGER);
+        lblMessage.setForeground(UITheme.readable(UITheme.DANGER));
 
         JPanel mainButtons = new JPanel(new GridLayout(1, 2, 10, 0));
         mainButtons.setOpaque(false);
@@ -361,7 +361,7 @@ public class LoginFrame extends JFrame {
     }
 
     private static String linkText(boolean hover) {
-        String color = hover ? "#ffc440" : "#fbab06";
+        String color = hover ? "#7a4900" : UITheme.readableHex(UITheme.PRIMARY_TEXT);
         return "<html>New customer?&nbsp; <span style='color:" + color + "'>"
                 + (hover ? "<u>Register an account</u>" : "Register an account") + "</span></html>";
     }
@@ -404,7 +404,7 @@ public class LoginFrame extends JFrame {
             JLabel text = new JLabel("<html>Keep track of warehouses, products and every<br>"
                     + "stock movement: receiving, releasing and<br>stock transfers.</html>");
             text.setFont(UITheme.FONT.deriveFont(16f));
-            text.setForeground(UITheme.TEXT);
+            text.setForeground(UITheme.CHROME_TEXT);
             top.add(leftAligned(text));
             top.add(javax.swing.Box.createVerticalStrut(16));
             String bullet = "<span style='color:#fbab06'>&#9632;</span>&nbsp; ";
@@ -420,7 +420,7 @@ public class LoginFrame extends JFrame {
 
             JLabel tech = new JLabel("Java Swing  |  AWT  |  JDBC  |  Apache Derby");
             tech.setFont(UITheme.FONT_SMALL);
-            tech.setForeground(UITheme.TEXT_MUTED);
+            tech.setForeground(UITheme.CHROME_MUTED);
             add(tech, BorderLayout.SOUTH);
         }
 
@@ -435,7 +435,7 @@ public class LoginFrame extends JFrame {
             g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
             int w = getWidth();
             int h = getHeight();
-            g.setColor(UITheme.BACKGROUND);
+            g.setColor(UITheme.HEADER);
             g.fillRect(0, 0, w, h);
             g.setColor(new Color(251, 171, 6, 22));   // decorative amber rings
             g.setStroke(new java.awt.BasicStroke(26f));

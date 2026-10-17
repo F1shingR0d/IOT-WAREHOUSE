@@ -13,18 +13,21 @@ import javax.swing.Box;
 import javax.swing.BoxLayout;
 import javax.swing.JComponent;
 import javax.swing.JLabel;
+import javax.swing.JMenuBar;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.border.CompoundBorder;
 import javax.swing.border.EmptyBorder;
 import javax.swing.border.MatteBorder;
+import ui.components.DarkScrollBarUI;
 import ui.components.FlatButton;
 import ui.components.ModuleIcon;
 
 /**
  * The parts shared by the two main windows (the staff DashboardFrame and
  * the CustomerDashboardFrame): the black header with the logo, the sidebar
- * with the amber stripes and the user card, and the status bar.
+ * with the amber stripes and the user card, and the status bar. These stay
+ * dark; only the work area in the middle uses the light theme.
  */
 final class FrameChrome {
 
@@ -48,7 +51,7 @@ final class FrameChrome {
                 g.dispose();
             }
         };
-        header.setBackground(UITheme.BACKGROUND);
+        header.setBackground(UITheme.HEADER);
         header.setBorder(new EmptyBorder(6, 22, 9, 18));
 
         JPanel brand = new JPanel(new FlowLayout(FlowLayout.LEFT, 0, 0));
@@ -75,7 +78,7 @@ final class FrameChrome {
         JPanel right = new JPanel(new FlowLayout(FlowLayout.RIGHT, 12, 12));
         right.setOpaque(false);
         clock.setFont(UITheme.FONT_NAV_BOLD);
-        clock.setForeground(UITheme.TEXT);
+        clock.setForeground(UITheme.CHROME_TEXT);
         clock.setIcon(new ModuleIcon(ModuleIcon.Type.CALENDAR, 24, UITheme.BRAND));
         clock.setIconTextGap(10);
         right.add(clock);
@@ -112,6 +115,7 @@ final class FrameChrome {
         scroll.setBorder(new MatteBorder(0, 0, 0, 1, new Color(70, 52, 22)));
         scroll.getViewport().setBackground(UITheme.SIDEBAR);
         scroll.getVerticalScrollBar().setUnitIncrement(16);
+        scroll.getVerticalScrollBar().setUI(DarkScrollBarUI.chrome());
         scroll.setPreferredSize(new Dimension(262, 100));
         return scroll;
     }
@@ -185,14 +189,25 @@ final class FrameChrome {
     static JComponent statusBar(String loggedInText) {
         JPanel status = new JPanel(new BorderLayout());
         status.setBackground(UITheme.SIDEBAR);
-        status.setBorder(new CompoundBorder(new MatteBorder(1, 0, 0, 0, UITheme.BORDER), new EmptyBorder(5, 16, 5, 16)));
+        status.setBorder(new CompoundBorder(new MatteBorder(1, 0, 0, 0, UITheme.CHROME_BORDER), new EmptyBorder(5, 16, 5, 16)));
         JLabel db = new JLabel("<html><span style='color:#4ac868'>&#9679;</span>&nbsp; Connected to Apache Derby"
                 + " &nbsp;|&nbsp; " + DatabaseConnection.getUrl() + "</html>");
         db.setFont(UITheme.FONT_SMALL);
-        db.setForeground(UITheme.TEXT_MUTED);
+        db.setForeground(UITheme.CHROME_MUTED);
         status.add(db, BorderLayout.WEST);
-        status.add(UITheme.mutedLabel(loggedInText), BorderLayout.EAST);
+        JLabel who = new JLabel(loggedInText);
+        who.setFont(UITheme.FONT_SMALL);
+        who.setForeground(UITheme.CHROME_MUTED);
+        status.add(who, BorderLayout.EAST);
         return status;
+    }
+
+    /** The menu bar stays dark like the header, so its menu titles are written in light text. */
+    static void styleMenuBar(JMenuBar bar) {
+        for (int i = 0; i < bar.getMenuCount(); i++) {
+            bar.getMenu(i).setForeground(UITheme.CHROME_TEXT);
+            bar.getMenu(i).setOpaque(false);   // the dark menu bar shows through (the drop-down lists stay white)
+        }
     }
 
     static String initialsOf(String fullName) {

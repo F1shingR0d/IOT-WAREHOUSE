@@ -225,6 +225,7 @@ public class DashboardFrame extends JFrame {
         help.setMnemonic(KeyEvent.VK_H);
         help.add(menuItem("About", null, () -> new AboutDialog(this).setVisible(true)));
         bar.add(help);
+        FrameChrome.styleMenuBar(bar);
         return bar;
     }
 
